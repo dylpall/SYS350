@@ -27,17 +27,18 @@ def get_vm(vm):
     global summary
     summary = vm.summary
     vm_name = summary.config.name
+    ip = summary.guest.ipAddress if summary.guest.ipAddress else "N/A"
     state = summary.runtime.powerState
     cpu = summary.config.numCpu
     memory = int(summary.config.memorySizeMB) / 1024
-    ip = summary.guest.ipAddress if summary.guest.ipAddress else "N/A"
+
 
     return {
         "Name": vm_name,
-        "state": state,
-        "cpu": cpu,
-        "memory": memory,
-        "ip": ip
+        "IP": ip,
+        "Power State": state,
+        "CPU": cpu,
+        "Memory (GB)": int(memory)
     }
 
 def search_vms(content):
@@ -52,7 +53,7 @@ def search_vms(content):
             if vm_name == vm.name:
                 vm_info = get_vm(vm)
                 print("Printing info...")
-                print(json.dumps(vm_info, indent=4))
+                print(json.dumps(vm_info, indent = 4))
                 found = True
                 break
         if not found:
@@ -63,6 +64,10 @@ def search_vms(content):
             vm_info = get_vm(vm)
             print(json.dumps(vm_info, indent = 4))
             print("-------------------------------")
+
+
+
+
 
 def session_info():
     source_ip = socket.gethostbyname(socket.gethostname())
