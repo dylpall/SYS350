@@ -102,7 +102,7 @@ def poweron():
                     print(vm_name, "is already running")
                     break
                 elif summary.runtime.powerState == "poweredOff":
-                    print(vm_name, "is being powered on...") 
+                    print(vm_name, "is starting up...") 
                     task = [vm.PowerOn()]
                 found = True
                 break
@@ -122,10 +122,10 @@ def poweroff():
             if vm_name == vm.name:
                 vm_info = get_vm(vm)
                 if summary.runtime.powerState == "poweredOff":
-                    print(vm_name, "is already powered off")
+                    print(vm_name, "is already powered off.")
                     break
                 elif summary.runtime.powerState == "poweredOn":
-                    print(vm_name, "is being powered off...")  
+                    print(vm_name, "is shutting down...")  
                     task = [vm.PowerOff()]
                 found = True
                 break
@@ -145,14 +145,14 @@ def create_snapshot():
             if vm_name == vm.name: #Checks for match
                 vm_info = get_vm(vm)
 
-                # Name for the snapshot
+                # Name for snapshot
                 snapshot_name = input("Enter name for snapshot: ") 
                  
-                # Description for snapshot
+                #description
                 snapshot_description = input("Enter snapshot description: ")
                 snapshot_memory = bool(input("Snapshot memory (True/False): ")) 
                 
-                # Creating the snapshot
+                #creates snapshot
                 vm.CreateSnapshot_Task(
                 name=snapshot_name, 
                 description=snapshot_description, 
