@@ -6,6 +6,7 @@ import json
 import getpass
 
 
+
 def connect_vcenter():
     global content
     with open('vcenter-conf.json') as f:
@@ -22,6 +23,8 @@ def connect_vcenter():
     print(aboutInfo.fullName)
     content = si.content
     return content
+
+
 
 def get_vm(vm):
     global summary
@@ -41,31 +44,31 @@ def get_vm(vm):
         "Memory (GB)": int(memory)
     }
 
+
+
 def search_vms(content):
     container = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True)
     global vm_name
-    vm_name = input("Enter the name of the VM. (enter to return all VMs): ")
+    vm_name = input("Enter the name of the VM or hit enter to return all VMs: ")
     vms = container.view
 
-    if vm_name:
+    if vm_name: 
         found = False
         for vm in vms:
             if vm_name == vm.name:
                 vm_info = get_vm(vm)
-                print("Printing info...")
-                print(json.dumps(vm_info, indent = 4))
+                print("Printing info for:", vm.name)
+                print(json.dumps(vm_info, indent=4))
                 found = True
                 break
         if not found:
-            print("No VM found")
+            print("No VM found with the name:", vm_name)
     else:
         print("Listing all VMs:")
         for vm in vms:
             vm_info = get_vm(vm)
             print(json.dumps(vm_info, indent = 4))
             print("-------------------------------")
-
-
 
 
 
@@ -82,7 +85,168 @@ def session_info():
     print('vCenter Server:', vcenter_server)
     print('Current User:', current_user)
     print('-------------------------------')
-            
+
+
+
+def poweron():
+    container = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True)
+    vm_name = input("Enter the name of the VM: ")
+    vms = container.view
+
+    if vm_name: 
+        found = False
+        for vm in vms:
+            if vm_name == vm.name:
+                vm_info = get_vm(vm)
+                if summary.runtime.powerState == "poweredOn":
+                    print(vm_name, "is already running")
+                    break
+                elif summary.runtime.powerState == "poweredOff":
+                    print(vm_name, "is being powered on...") 
+                    task = [vm.PowerOn()]
+                found = True
+                break
+        if not found:
+            print("No VM found with the name:", vm_name)
+
+
+
+def poweroff():
+    container = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True)
+    vm_name = input("Enter the name of the VM: ")
+    vms = container.view
+
+    if vm_name:
+        found = False
+        for vm in vms:
+            if vm_name == vm.name:
+                vm_info = get_vm(vm)
+                if summary.runtime.powerState == "poweredOff":
+                    print(vm_name, "is already powered off")
+                    break
+                elif summary.runtime.powerState == "poweredOn":
+                    print(vm_name, "is being powered off...")  
+                    task = [vm.PowerOff()]
+                found = True
+                break
+        if not found:
+            print("No VM found with the name:", vm_name)
+
+
+
+def create_snapshot():
+    container = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True)
+    vm_name = input("Enter the name of the VM: ")
+    vms = container.view
+
+    if vm_name:
+        found = False
+        for vm in vms:
+            if vm_name == vm.name: #Checks for match
+                vm_info = get_vm(vm)
+
+                # Name for the snapshot
+                snapshot_name = input("Enter name for snapshot: ") 
+                 
+                # Description for snapshot
+                snapshot_description = input("Enter snapshot description: ")
+                snapshot_memory = bool(input("Snapshot memory (True/False): ")) 
+                
+                # Creating the snapshot
+                vm.CreateSnapshot_Task(
+                name=snapshot_name, 
+                description=snapshot_description, 
+                memory=snapshot_memory,
+                quiesce=False
+                )
+                found = True
+                break
+        if not found:
+            print("No VM found with the name:", vm_name)
+
+
+
+def tweak_vm():
+    container = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True)
+    vm_name = input("Enter the name of the VM: ")
+    vms = container.view
+
+    if vm_name:
+        found = False
+        for vm in vms:
+            if vm_name == vm.name:
+                vm_info = get_vm(vm)
+                config_spec = vim.vm.ConfigSpec()
+                new_memory = int(input("Enter new memory amount in gb: "))
+                new_memory_mb = (new_memory * 1024)
+                new_cpu = int(input("Enter new amount of CPUs: "))
+                config_spec.memoryMB = new_memory_mb
+                config_spec.numCPUs = new_cpu
+
+
+                print("Changing Memory and CPU count for", vm_name)
+                task = vm.ReconfigVM_Task(config_spec)
+                found = True
+                break
+        if not found:
+            print("No VM found with the name:", vm_name)
+
+
+
+def restart_vm():
+    container = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True)
+    vm_name = input("Enter the name of the VM: ")
+    vms = container.view
+    if vm_name:
+        found = False
+        for vm in vms:
+            if vm_name == vm.name:
+                vm_info = get_vm(vm)
+                if summary.runtime.powerState == "poweredOff":
+                    print(vm_name, "is powered off...")
+                    power_input = input("Power on? (y/n): ")
+                    if power_input == 'y' or power_input == 'Y':
+                        task = [vm.PowerOn()]
+                    else:
+                        print("Returning to menu...")
+                        break
+                elif summary.runtime.powerState == "poweredOn":
+                    print(vm_name, "is being restarted...")
+                    try:
+                        vm.RebootGuest()
+                    except:
+                        vm.ResetVM_Task()
+                found = True
+                break
+        if not found:
+            print("No VM found with the name:", vm_name)
+
+
+
+def Delete_VM():
+    container = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True)
+    vm_name = input("Enter the name of the VM: ")
+    vms = container.view
+
+    if vm_name:
+        found = False
+        for vm in vms:
+            if vm_name == vm.name:
+                vm_info = get_vm(vm)
+                confirm = input("Are you sure you want to delete? (y/n): ")
+                if confirm == 'y' or confirm == 'Y':
+                    print("Deleting:", vm_name)
+                    task = vm.Destroy_Task()
+                else:
+                    print("Returning to menu...")
+                    break
+                found = True
+                break
+        if not found:
+            print("No VM found with the name:", vm_name)
+
+
+
 # Menu func
 def Menu(): 
     print ("1. Connect to vCenter")
