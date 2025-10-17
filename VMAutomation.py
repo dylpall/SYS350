@@ -223,7 +223,7 @@ def restart_vm():
 
 
 
-def Delete_VM():
+def delete_vm():
     container = content.viewManager.CreateContainerView(content.rootFolder, [vim.VirtualMachine], True)
     vm_name = input("Enter the name of the VM: ")
     vms = container.view
